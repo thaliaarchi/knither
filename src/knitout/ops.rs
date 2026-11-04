@@ -6,6 +6,8 @@
 // - Determine grammar of machine needles and how machine-specific.
 // - Intern carrier name strings.
 
+use core::fmt;
+
 /// A Knitout operation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Op {
@@ -28,7 +30,7 @@ pub enum Op {
     OutHook(CarrierSet),
     /// `stitch L T`: Before forming a loop, pull needle by `L` machine units.
     /// After forming a loop, pull needle by `T` machine units.
-    Stitch(StitchValue, StitchValue),
+    Stitch(Stitch),
     /// `rack R`: Set the offset of the back bed relative to the front bed.
     Rack(RackingValue),
     /// `knit D N CS`: Pull a loop formed in direction `D` by the yarns in
@@ -85,17 +87,69 @@ pub struct CarrierSet(Vec<Carrier>);
 
 /// A carrier name. Carrier names are strings that do not contain the ` `
 /// (space), `,` (comma), or `;` (semicolon) character. Backends may impose
-/// further requirements. Examples: `A`, `B`, and `2`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Carrier(String);
+/// further requirements. Examples: `A`, `B`, and `2`. SWG supports `1`, `2`,
+/// `3`, `4`, `5`, `6`, `7`, `8`, `9`, and `10`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Carrier {
+    C1,
+    C2,
+    C3,
+    C4,
+    C5,
+    C6,
+    C7,
+    C8,
+    C9,
+    C10,
+}
 
-/// A floating point number giving the number of machine units to retract a
-/// needle. Used with the `stitch` instruction. The meaning of a stitch value
-/// may vary between machines and manufacturers; be aware that negative stitch
-/// values are supported by at least one manufacturer. Examples: `2`, `-7.5`,
-/// and `30`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct StitchValue(Float);
+/// A `stitch L T` operation giving two machine units to retract a needle.
+/// Before forming a loop, pull needle by `L` machine units. After forming a
+/// loop, pull needle by `T` machine units.
+#[expect(non_camel_case_types)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Stitch {
+    /// `stitch -10 10`
+    Ln10_S10,
+    /// `stitch 0 10`
+    L0_S10,
+    /// `stitch 10 10`
+    L10_S10,
+    /// `stitch 5 15`
+    L5_S15,
+    /// `stitch 10 15`
+    L10_S15,
+    /// `stitch 15 15`
+    L15_S15,
+    /// `stitch 10 20`
+    L10_S20,
+    /// `stitch 15 20`
+    L15_S20,
+    /// `stitch 20 20`
+    L20_S20,
+    /// `stitch 15 25`
+    L15_S25,
+    /// `stitch 20 25`
+    L20_S25,
+    /// `stitch 25 25`
+    L25_S25,
+    /// `stitch 25 30`
+    L25_S30,
+    /// `stitch 25 35`
+    L25_S35,
+    /// `stitch 25 40`
+    L25_S40,
+    /// `stitch 25 45`
+    L25_S45,
+    /// `stitch 25 50`
+    L25_S50,
+    /// `stitch 25 55`
+    L25_S55,
+    /// `stitch 25 60`
+    L25_S60,
+    /// `stitch 25 65`
+    L25_S65,
+}
 
 /// Number indicating the offset of the front bed relative to the back bed. That
 /// is, at racking R, back needle index B is aligned to front needle index B+R.
@@ -115,3 +169,47 @@ impl PartialEq for Float {
     }
 }
 impl Eq for Float {}
+
+impl fmt::Debug for Carrier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Carrier::C1 => "1",
+            Carrier::C2 => "2",
+            Carrier::C3 => "3",
+            Carrier::C4 => "4",
+            Carrier::C5 => "5",
+            Carrier::C6 => "6",
+            Carrier::C7 => "7",
+            Carrier::C8 => "8",
+            Carrier::C9 => "9",
+            Carrier::C10 => "10",
+        })
+    }
+}
+
+impl fmt::Debug for Stitch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Stitch::Ln10_S10 => "stitch -10 10",
+            Stitch::L0_S10 => "stitch 0 10",
+            Stitch::L10_S10 => "stitch 10 10",
+            Stitch::L5_S15 => "stitch 5 15",
+            Stitch::L10_S15 => "stitch 10 15",
+            Stitch::L15_S15 => "stitch 15 15",
+            Stitch::L10_S20 => "stitch 10 20",
+            Stitch::L15_S20 => "stitch 15 20",
+            Stitch::L20_S20 => "stitch 20 20",
+            Stitch::L15_S25 => "stitch 15 25",
+            Stitch::L20_S25 => "stitch 20 25",
+            Stitch::L25_S25 => "stitch 25 25",
+            Stitch::L25_S30 => "stitch 25 30",
+            Stitch::L25_S35 => "stitch 25 35",
+            Stitch::L25_S40 => "stitch 25 40",
+            Stitch::L25_S45 => "stitch 25 45",
+            Stitch::L25_S50 => "stitch 25 50",
+            Stitch::L25_S55 => "stitch 25 55",
+            Stitch::L25_S60 => "stitch 25 60",
+            Stitch::L25_S65 => "stitch 25 65",
+        })
+    }
+}
