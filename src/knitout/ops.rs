@@ -1,4 +1,5 @@
-//! Types for Knitout operations.
+//! Types for Knitout operations, specialized for the Shima Seiki WholeGarment
+//! SWG 091 N<sub>2</sub>.
 
 // TODO:
 // - Determine allowed increments of stitch and racking values for whether f64
@@ -158,7 +159,9 @@ pub enum Stitch {
 /// Needles are considered aligned if they can transfer. That is, at racking 2,
 /// it is possible to transfer from f3 to b1. May be fractional on some
 /// machines. E.g., on Shima machines, 0.25/-0.75 are used for all-needle
-/// knitting. Examples: `4`, `5.0`, `2.25`, and `-1.75`.
+/// knitting. Examples: `4`, `5.0`, `2.25`, and `-1.75`. SWG supports racking
+/// values in [-8, 8] that are integers or offset by 0.25 (quarter-pitch), e.g.,
+/// `-7.75`, `-0.75`, `0.25`, and `7.25`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RackingValue(Float);
 
