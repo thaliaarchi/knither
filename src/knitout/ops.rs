@@ -8,6 +8,8 @@
 
 use core::fmt;
 
+use enumset::{EnumSet, EnumSetType};
+
 /// A Knitout operation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Op {
@@ -83,13 +85,13 @@ pub struct Needle(String);
 
 /// List of zero or more carrier names. Examples: `A B`, `2`, and ``.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CarrierSet(Vec<Carrier>);
+pub struct CarrierSet(EnumSet<Carrier>);
 
 /// A carrier name. Carrier names are strings that do not contain the ` `
 /// (space), `,` (comma), or `;` (semicolon) character. Backends may impose
 /// further requirements. Examples: `A`, `B`, and `2`. SWG supports `1`, `2`,
 /// `3`, `4`, `5`, `6`, `7`, `8`, `9`, and `10`.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, EnumSetType)]
 pub enum Carrier {
     C1,
     C2,
@@ -107,7 +109,7 @@ pub enum Carrier {
 /// Before forming a loop, pull needle by `L` machine units. After forming a
 /// loop, pull needle by `T` machine units.
 #[expect(non_camel_case_types)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stitch {
     /// `stitch -10 10`
     Ln10_S10,
@@ -170,7 +172,21 @@ impl PartialEq for Float {
 }
 impl Eq for Float {}
 
-impl fmt::Debug for Carrier {
+impl fmt::Display for CarrierSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut cs = self.0.iter();
+        let Some(first) = cs.next() else {
+            return f.write_str("empty");
+        };
+        write!(f, "{first}")?;
+        for c in cs {
+            write!(f, " {c}")?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for Carrier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Carrier::C1 => "1",
@@ -187,7 +203,7 @@ impl fmt::Debug for Carrier {
     }
 }
 
-impl fmt::Debug for Stitch {
+impl fmt::Display for Stitch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Stitch::Ln10_S10 => "stitch -10 10",
