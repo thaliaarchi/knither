@@ -1,7 +1,4 @@
-[package]
-name = "knither"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-enumset = "1.1.15"
+[workspace]
+members = ["backend"]
+default-members = ["backend"]
+resolver = "3"
