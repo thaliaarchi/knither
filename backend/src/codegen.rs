@@ -47,6 +47,7 @@ impl Builder {
         assert!(self.carriers.contains(carrier));
         self.shima_waste_yarn_cast_on(carrier, width);
         self.waste_yarn_tube(carrier, width);
+        self.draw_thread(Carrier::C1, width);
         self.french_welt_cast_on(carrier, width);
         // self.emit(Op::OutHook(1));
         self.emit(Op::PresserMode(PresserMode::Auto));
@@ -115,7 +116,7 @@ impl Builder {
                 carrier.into(),
             ));
         }
-        self.emit(Op::Knit(
+        self.emit(Op::Miss(
             Direction::Plus,
             Needle::new(NeedleKind::FrontHook, width - 1),
             carrier.into(),
@@ -181,6 +182,43 @@ impl Builder {
             carrier.into(),
         ));
         self.emit(Op::Rack(0.25.into()));
+    }
+
+    /// Insert the nylon draw thread separating the waste yarn from the piece.
+    pub fn draw_thread(&mut self, carrier: Carrier, width: i32) {
+        assert!(self.carriers.contains(carrier));
+        self.emit(Op::InHook(carrier.into()));
+        self.emit(Op::Knit(
+            Direction::Minus,
+            Needle::new(NeedleKind::FrontHook, width),
+            carrier.into(),
+        ));
+        self.emit(Op::Knit(
+            Direction::Plus,
+            Needle::new(NeedleKind::FrontHook, width - 1),
+            carrier.into(),
+        ));
+        for n in (0..width - 1).rev() {
+            self.emit(Op::Knit(
+                Direction::Minus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ));
+        }
+        for n in 0..width {
+            self.emit(Op::Knit(
+                Direction::Plus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ));
+        }
+        self.emit(Op::Miss(
+            Direction::Plus,
+            Needle::new(NeedleKind::FrontHook, width),
+            carrier.into(),
+        ));
+        self.emit(Op::ReleaseHook(carrier.into()));
+        self.emit(Op::Drop(Needle::new(NeedleKind::FrontHook, width)));
     }
 
     pub fn french_welt_cast_on(&mut self, carrier: Carrier, width: i32) {
