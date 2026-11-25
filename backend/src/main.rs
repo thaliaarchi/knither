@@ -13,5 +13,6 @@ fn main() {
         (Carrier::C4, args[2].clone()),
     ]);
     builder.cast_on(Carrier::C4, width);
+    builder.finish(Carrier::C4, width, 4);
     print!("{builder}");
 }

@@ -47,9 +47,10 @@ impl Builder {
         assert!(self.carriers.contains(carrier));
         self.shima_waste_yarn_cast_on(carrier, width);
         self.waste_yarn_tube(carrier, width);
+        // TODO: Avoid hard-coded C1.
         self.draw_thread(Carrier::C1, width);
         self.french_welt_cast_on(carrier, width);
-        // self.emit(Op::OutHook(1));
+        self.emit(Op::OutHook(Carrier::C1.into()));
         self.emit(Op::PresserMode(PresserMode::Auto));
     }
 
@@ -316,6 +317,17 @@ impl Builder {
                     ));
                 }
             }
+        }
+    }
+
+    pub fn finish(&mut self, carrier: Carrier, width: i32, rows: i32) {
+        self.tube(carrier, width, rows, LeftRight::Right, true);
+        self.emit(Op::OutHook(carrier.into()));
+        for n in 0..width {
+            self.emit(Op::Drop(Needle::new(NeedleKind::FrontHook, n)));
+        }
+        for n in 0..width {
+            self.emit(Op::Drop(Needle::new(NeedleKind::BackHook, n)));
         }
     }
 
