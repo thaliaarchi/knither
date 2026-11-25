@@ -152,6 +152,55 @@ impl Builder {
         self.emit(Op::Rack(0.25.into()));
     }
 
+    pub fn french_welt_cast_on(&mut self, carrier: Carrier, width: i32) {
+        self.emit(Op::Stitch(Stitch::Number(101)));
+        self.emit(Op::Rack(0.25.into()));
+        for n in (0..width).rev() {
+            self.emit(Op::Knit(
+                Direction::Minus,
+                Needle::new(NeedleKind::BackHook, n),
+                carrier.into(),
+            ));
+            self.emit(Op::Knit(
+                Direction::Minus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ));
+        }
+        self.emit(Op::Stitch(Stitch::Number(103)));
+        self.emit(Op::Miss(
+            Direction::Plus,
+            Needle::new(NeedleKind::FrontHook, 0),
+            carrier.into(),
+        ));
+        for n in 1..width {
+            self.emit(Op::Knit(
+                Direction::Plus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ))
+        }
+        for n in (0..width).rev() {
+            self.emit(Op::Knit(
+                Direction::Minus,
+                Needle::new(NeedleKind::BackHook, n),
+                carrier.into(),
+            ))
+        }
+        for n in 0..width {
+            self.emit(Op::Knit(
+                Direction::Plus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ))
+        }
+        self.emit(Op::Miss(
+            Direction::Plus,
+            Needle::new(NeedleKind::FrontHook, width),
+            carrier.into(),
+        ));
+    }
+
     pub fn tube(
         &mut self,
         carrier: Carrier,
