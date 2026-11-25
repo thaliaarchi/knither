@@ -93,8 +93,19 @@ pub enum Direction {
 /// V-bed machine, needles are prefixed `f` and `b` for front and back. A V-bed
 /// with slide needles adds `fs` and `bs` for front and back sliders. Examples:
 /// `f1`, `b-2`, and `fs3`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Needle(String);
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Needle {
+    pub kind: NeedleKind,
+    pub index: i32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NeedleKind {
+    FrontHook,
+    BackHook,
+    FrontSlider,
+    BackSlider,
+}
 
 /// List of zero or more carrier names. Examples: `A B`, `2`, and ``.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -180,8 +191,7 @@ pub enum Stitch {
 /// knitting. Examples: `4`, `5.0`, `2.25`, and `-1.75`. SWGN2 supports racking
 /// values in [-8, 8] that are integers or offset by 0.25 (quarter-pitch), e.g.,
 /// `-7.75`, `-0.75`, `0.25`, and `7.25`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RackingValue(Float);
+pub type RackingValue = Float;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Float(f64);
@@ -236,7 +246,18 @@ impl fmt::Display for Direction {
 
 impl fmt::Display for Needle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
+        write!(f, "{}{}", self.kind, self.index)
+    }
+}
+
+impl fmt::Display for NeedleKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            NeedleKind::FrontHook => "f",
+            NeedleKind::BackHook => "b",
+            NeedleKind::FrontSlider => "fs",
+            NeedleKind::BackSlider => "bs",
+        })
     }
 }
 
@@ -299,12 +320,6 @@ impl fmt::Display for Stitch {
     }
 }
 
-impl fmt::Display for RackingValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 impl fmt::Display for PresserMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
@@ -312,6 +327,12 @@ impl fmt::Display for PresserMode {
             PresserMode::Auto => "auto",
             PresserMode::On => "on",
         })
+    }
+}
+
+impl<T: Into<EnumSet<Carrier>>> From<T> for CarrierSet {
+    fn from(cs: T) -> Self {
+        CarrierSet(cs.into())
     }
 }
 
@@ -324,5 +345,16 @@ impl Eq for Float {}
 impl fmt::Display for Float {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
+    }
+}
+impl From<f64> for Float {
+    fn from(value: f64) -> Self {
+        Float(value)
+    }
+}
+
+impl Needle {
+    pub fn new(kind: NeedleKind, index: i32) -> Self {
+        Needle { kind, index }
     }
 }
