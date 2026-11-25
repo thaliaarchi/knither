@@ -8,8 +8,18 @@ use crate::knitout::{Carrier, Direction, Needle, NeedleKind, Op, PresserMode, St
 //     not renumber them. Thus the Knitout producer must keep track of the
 //     current racking value.
 
+// TODO:
+// - There's a lot of repetitive codegen. I should make an abstraction for
+//   loops.
+
 pub struct Builder {
     ops: Vec<Op>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LeftRight {
+    Left,
+    Right,
 }
 
 impl Builder {
@@ -108,6 +118,84 @@ impl Builder {
                 Needle::new(NeedleKind::BackHook, n + 1),
                 carrier.into(),
             ));
+        }
+    }
+
+    pub fn waste_yarn_tube(&mut self, carrier: Carrier, width: i32) {
+        self.tube(carrier, width, 20, LeftRight::Right, true);
+        self.emit(Op::Rack(0.0.into()));
+        for n in 0..width {
+            self.emit(Op::Xfer(
+                Needle::new(NeedleKind::BackHook, n),
+                Needle::new(NeedleKind::FrontHook, n),
+            ));
+        }
+        for n in (0..width).rev() {
+            self.emit(Op::Knit(
+                Direction::Minus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ));
+        }
+        for n in 0..width {
+            self.emit(Op::Knit(
+                Direction::Plus,
+                Needle::new(NeedleKind::FrontHook, n),
+                carrier.into(),
+            ));
+        }
+        self.emit(Op::Miss(
+            Direction::Plus,
+            Needle::new(NeedleKind::FrontHook, width),
+            carrier.into(),
+        ));
+        self.emit(Op::Rack(0.25.into()));
+    }
+
+    pub fn tube(
+        &mut self,
+        carrier: Carrier,
+        width: i32,
+        rows: i32,
+        start_edge: LeftRight,
+        clockwise: bool,
+    ) {
+        let left_going = if clockwise {
+            NeedleKind::FrontHook
+        } else {
+            NeedleKind::BackHook
+        };
+        let right_going = if clockwise {
+            NeedleKind::BackHook
+        } else {
+            NeedleKind::FrontHook
+        };
+        for _ in 0..rows {
+            if start_edge == LeftRight::Right {
+                for n in (0..width).rev() {
+                    self.emit(Op::Knit(
+                        Direction::Minus,
+                        Needle::new(left_going, n),
+                        carrier.into(),
+                    ));
+                }
+            }
+            for n in 0..width {
+                self.emit(Op::Knit(
+                    Direction::Plus,
+                    Needle::new(right_going, n),
+                    carrier.into(),
+                ));
+            }
+            if start_edge == LeftRight::Left {
+                for n in (0..width).rev() {
+                    self.emit(Op::Knit(
+                        Direction::Minus,
+                        Needle::new(left_going, n),
+                        carrier.into(),
+                    ));
+                }
+            }
         }
     }
 

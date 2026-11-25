@@ -55,7 +55,7 @@ pub enum Op {
     /// loop in direction `D` at location `N`. (Not generally needed, used when
     /// performing explicit kickbacks or purposeful yarn capture.)
     Miss(Direction, Needle, CarrierSet),
-    /// `pause `: Pause the machine until the operator enters a command to
+    /// `pause`: Pause the machine until the operator enters a command to
     /// continue. (Not generally needed, but can be useful when, e.g., having
     /// the operator change yarns.)
     Pause,
