@@ -1,4 +1,8 @@
-use crate::knitout::{Carrier, Direction, Needle, NeedleKind, Op, PresserMode, Stitch};
+use std::fmt;
+
+use enumset::EnumSet;
+
+use crate::knitout::{Carrier, CarrierSet, Direction, Needle, NeedleKind, Op, PresserMode, Stitch};
 
 // Notes:
 // - Needle numbering:
@@ -13,6 +17,9 @@ use crate::knitout::{Carrier, Direction, Needle, NeedleKind, Op, PresserMode, St
 //   loops.
 
 pub struct Builder {
+    /// Map from carrier number to yarn header string.
+    yarns: Vec<(Carrier, String)>,
+    carriers: EnumSet<Carrier>,
     ops: Vec<Op>,
 }
 
@@ -23,7 +30,30 @@ pub enum LeftRight {
 }
 
 impl Builder {
+    pub fn new(yarns: Vec<(Carrier, String)>) -> Self {
+        let mut carriers = EnumSet::new();
+        for (carrier, _) in &yarns {
+            carriers.insert(*carrier);
+        }
+        assert_eq!(carriers.len(), yarns.len());
+        Builder {
+            yarns,
+            carriers,
+            ops: Vec::new(),
+        }
+    }
+
+    pub fn cast_on(&mut self, carrier: Carrier, width: i32) {
+        assert!(self.carriers.contains(carrier));
+        self.shima_waste_yarn_cast_on(carrier, width);
+        self.waste_yarn_tube(carrier, width);
+        self.french_welt_cast_on(carrier, width);
+        // self.emit(Op::OutHook(1));
+        self.emit(Op::PresserMode(PresserMode::Auto));
+    }
+
     pub fn shima_waste_yarn_cast_on(&mut self, carrier: Carrier, width: i32) {
+        assert!(self.carriers.contains(carrier));
         assert!(width > 2 && width % 2 == 0);
 
         // Shima waste yarn cast on:
@@ -122,6 +152,7 @@ impl Builder {
     }
 
     pub fn waste_yarn_tube(&mut self, carrier: Carrier, width: i32) {
+        assert!(self.carriers.contains(carrier));
         self.tube(carrier, width, 20, LeftRight::Right, true);
         self.emit(Op::Rack(0.0.into()));
         for n in 0..width {
@@ -153,6 +184,7 @@ impl Builder {
     }
 
     pub fn french_welt_cast_on(&mut self, carrier: Carrier, width: i32) {
+        assert!(self.carriers.contains(carrier));
         self.emit(Op::Stitch(Stitch::Number(101)));
         self.emit(Op::Rack(0.25.into()));
         for n in (0..width).rev() {
@@ -209,6 +241,7 @@ impl Builder {
         start_edge: LeftRight,
         clockwise: bool,
     ) {
+        assert!(self.carriers.contains(carrier));
         let left_going = if clockwise {
             NeedleKind::FrontHook
         } else {
@@ -250,5 +283,19 @@ impl Builder {
 
     fn emit(&mut self, op: Op) {
         self.ops.push(op);
+    }
+}
+
+impl fmt::Display for Builder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, ";!knitout-2")?;
+        writeln!(f, ";;Carriers: {}", CarrierSet::from(EnumSet::all()))?;
+        for (carrier, yarn) in &self.yarns {
+            writeln!(f, ";;Yarn-{carrier}: {yarn}")?;
+        }
+        for op in &self.ops {
+            writeln!(f, "{op}")?;
+        }
+        Ok(())
     }
 }

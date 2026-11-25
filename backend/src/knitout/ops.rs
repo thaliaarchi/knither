@@ -115,7 +115,7 @@ pub struct CarrierSet(EnumSet<Carrier>);
 /// (space), `,` (comma), or `;` (semicolon) character. Backends may impose
 /// further requirements. Examples: `A`, `B`, and `2`. SWG supports `1`, `2`,
 /// `3`, `4`, `5`, `6`, `7`, `8`, `9`, and `10`.
-#[derive(Debug, EnumSetType)]
+#[derive(Debug, EnumSetType, Hash)]
 pub enum Carrier {
     C1,
     C2,
