@@ -1,13 +1,7 @@
-//! Types for Knitout operations, specialized for the Shima Seiki WholeGarment
-//! SWG 091 N<sub>2</sub>.
+//! Types for [Knitout](https://textiles-lab.github.io/knitout/) operations,
+//! specialized for the Shima Seiki WholeGarment SWG 091 N<sub>2</sub>.
 
-// TODO:
-// - Determine allowed increments of stitch and racking values for whether f64
-//   is appropriate.
-// - Determine grammar of machine needles and how machine-specific.
-// - Intern carrier name strings.
-
-use core::fmt;
+use std::fmt;
 
 use enumset::{EnumSet, EnumSetType};
 
@@ -31,8 +25,9 @@ pub enum Op {
     /// `outhook CS`: Bring a set of carriers out of action, using a yarn
     /// inserting hook to bring their yarns to the grippers.
     OutHook(CarrierSet),
-    /// `stitch L T`: Before forming a loop, pull needle by `L` machine units.
-    /// After forming a loop, pull needle by `T` machine units.
+    /// `stitch L T`: Before forming a loop, pull needle by `L` machine units
+    /// (leading). After forming a loop, pull needle by `T` machine units
+    /// (stitch).
     Stitch(Stitch),
     /// `rack R`: Set the offset of the back bed relative to the front bed.
     Rack(RackingValue),
@@ -64,8 +59,25 @@ pub enum Op {
     /// continue. (Not generally needed, but can be useful when, e.g., having
     /// the operator change yarns.)
     Pause,
-    /// `x-* *`: Extension opcode.
-    Ext(String, String),
+    /// `x-speed-number N`: Set the speed number (an abstract index into a
+    /// machine table of speed values). Sets speed for both knitting and
+    /// transfer passes. Valid speeds are 0 (default) or 1-15.
+    Speed(u8),
+    /// `x-sub-roller-number N`: Set the sub roller table number (an index into
+    /// a machine table of sub roller settings). Sets speed for only knitting
+    /// passes. Valid speeds are 0 (default) or 1-31.
+    SubRoller(u8),
+    /// `x-presser-mode M`: Set the fabric presser mode to `off` (no fabric
+    /// presser), `auto` (fabric presser on passes with only front or only back
+    /// stitches), or `on` (break passes so that fabric presser can always be
+    /// used). The default mode is `off`.
+    PresserMode(PresserMode),
+    /// `x-loop-start L`: Start loop number `L` (11-41 are valid loop numbers).
+    /// Loops may be nested up to two levels.
+    LoopStart(u8),
+    /// `x-loop-end L`: End loop number `L` (11-41 are valid loop numbers).
+    /// Loops may be nested up to two levels.
+    LoopEnd(u8),
 }
 
 /// A direction on the machine bed. For example, `+`, `-`.
@@ -107,51 +119,57 @@ pub enum Carrier {
 }
 
 /// A `stitch L T` operation giving two machine units to retract a needle.
-/// Before forming a loop, pull needle by `L` machine units. After forming a
-/// loop, pull needle by `T` machine units.
+/// Before forming a loop, pull needle by `L` machine units (leading). After
+/// forming a loop, pull needle by `T` machine units (stitch). On SWGN2
+/// machines, leading and stitch numbers are stored in an on-machine table, and
+/// accessed by an index.
 #[expect(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stitch {
-    /// `stitch -10 10`
+    /// `stitch -10 10` (SWGN2 stitch number 81).
     Ln10_S10,
-    /// `stitch 0 10`
+    /// `stitch 0 10` (SWGN2 stitch number 82).
     L0_S10,
-    /// `stitch 10 10`
+    /// `stitch 10 10` (SWGN2 stitch number 83).
     L10_S10,
-    /// `stitch 5 15`
+    /// `stitch 5 15` (SWGN2 stitch number 84).
     L5_S15,
-    /// `stitch 10 15`
+    /// `stitch 10 15` (SWGN2 stitch number 85).
     L10_S15,
-    /// `stitch 15 15`
+    /// `stitch 15 15` (SWGN2 stitch number 86).
     L15_S15,
-    /// `stitch 10 20`
+    /// `stitch 10 20` (SWGN2 stitch number 87).
     L10_S20,
-    /// `stitch 15 20`
+    /// `stitch 15 20` (SWGN2 stitch number 88).
     L15_S20,
-    /// `stitch 20 20`
+    /// `stitch 20 20` (SWGN2 stitch number 89).
     L20_S20,
-    /// `stitch 15 25`
+    /// `stitch 15 25` (SWGN2 stitch number 90).
     L15_S25,
-    /// `stitch 20 25`
+    /// `stitch 20 25` (SWGN2 stitch number 91).
     L20_S25,
-    /// `stitch 25 25`
+    /// `stitch 25 25` (SWGN2 stitch number 92).
     L25_S25,
-    /// `stitch 25 30`
+    /// `stitch 25 30` (SWGN2 stitch number 93).
     L25_S30,
-    /// `stitch 25 35`
+    /// `stitch 25 35` (SWGN2 stitch number 94).
     L25_S35,
-    /// `stitch 25 40`
+    /// `stitch 25 40` (SWGN2 stitch number 95).
     L25_S40,
-    /// `stitch 25 45`
+    /// `stitch 25 45` (SWGN2 stitch number 96).
     L25_S45,
-    /// `stitch 25 50`
+    /// `stitch 25 50` (SWGN2 stitch number 97).
     L25_S50,
-    /// `stitch 25 55`
+    /// `stitch 25 55` (SWGN2 stitch number 98).
     L25_S55,
-    /// `stitch 25 60`
+    /// `stitch 25 60` (SWGN2 stitch number 99).
     L25_S60,
-    /// `stitch 25 65`
+    /// `stitch 25 65` (SWGN2 stitch number 100).
     L25_S65,
+    /// `x-stitch-number N`: Sets the stitch number (an abstract index into a
+    /// machine table of stitch and leading values). Valid stitch numbers are
+    /// 1-120.
+    Number(u8),
 }
 
 /// Number indicating the offset of the front bed relative to the back bed. That
@@ -159,7 +177,7 @@ pub enum Stitch {
 /// Needles are considered aligned if they can transfer. That is, at racking 2,
 /// it is possible to transfer from f3 to b1. May be fractional on some
 /// machines. E.g., on Shima machines, 0.25/-0.75 are used for all-needle
-/// knitting. Examples: `4`, `5.0`, `2.25`, and `-1.75`. SWG supports racking
+/// knitting. Examples: `4`, `5.0`, `2.25`, and `-1.75`. SWGN2 supports racking
 /// values in [-8, 8] that are integers or offset by 0.25 (quarter-pitch), e.g.,
 /// `-7.75`, `-0.75`, `0.25`, and `7.25`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -168,12 +186,59 @@ pub struct RackingValue(Float);
 #[derive(Clone, Copy, Debug)]
 pub struct Float(f64);
 
-impl PartialEq for Float {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+/// Fabric presser mode. The default mode is `off`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PresserMode {
+    /// No fabric presser.
+    Off,
+    /// Fabric presser on passes with only front or only back stitches.
+    Auto,
+    /// Break passes so that fabric presser can always be
+    /// used.
+    On,
+}
+
+impl fmt::Display for Op {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Op::In(cs) => write!(f, "in {cs}"),
+            Op::InHook(cs) => write!(f, "inhook {cs}"),
+            Op::ReleaseHook(cs) => write!(f, "releasehook {cs}"),
+            Op::Out(cs) => write!(f, "out {cs}"),
+            Op::OutHook(cs) => write!(f, "outhook {cs}"),
+            Op::Stitch(stitch) => stitch.fmt(f),
+            Op::Rack(r) => write!(f, "rack {r}"),
+            Op::Knit(d, n, cs) => write!(f, "knit {d} {n} {cs}"),
+            Op::Tuck(d, n, cs) => write!(f, "tuck {d} {n} {cs}"),
+            Op::Split(d, n, n2, cs) => write!(f, "split {d} {n} {n2} {cs}"),
+            Op::Drop(n) => write!(f, "drop {n}"),
+            Op::Amiss(n) => write!(f, "amiss {n}"),
+            Op::Xfer(n, n2) => write!(f, "xfer {n} {n2}"),
+            Op::Miss(d, n, cs) => write!(f, "miss {d} {n} {cs}"),
+            Op::Pause => write!(f, "pause"),
+            Op::Speed(n) => write!(f, "x-speed-number {n}"),
+            Op::SubRoller(n) => write!(f, "x-sub-roller-number {n}"),
+            Op::PresserMode(m) => write!(f, "x-presser-mode {m}"),
+            Op::LoopStart(l) => write!(f, "x-loop-start {l}"),
+            Op::LoopEnd(l) => write!(f, "x-loop-end {l}"),
+        }
     }
 }
-impl Eq for Float {}
+
+impl fmt::Display for Direction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Direction::Plus => "+",
+            Direction::Minus => "-",
+        })
+    }
+}
+
+impl fmt::Display for Needle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 impl fmt::Display for CarrierSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -229,6 +294,35 @@ impl fmt::Display for Stitch {
             Stitch::L25_S55 => "stitch 25 55",
             Stitch::L25_S60 => "stitch 25 60",
             Stitch::L25_S65 => "stitch 25 65",
+            Stitch::Number(n) => return write!(f, "x-stitch-number {n}"),
         })
+    }
+}
+
+impl fmt::Display for RackingValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl fmt::Display for PresserMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            PresserMode::Off => "off",
+            PresserMode::Auto => "auto",
+            PresserMode::On => "on",
+        })
+    }
+}
+
+impl PartialEq for Float {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for Float {}
+impl fmt::Display for Float {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
